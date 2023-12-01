@@ -1,0 +1,59 @@
+import os
+from pdf2image import convert_from_path
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+# Function to convert PDF to JPEG
+def pdf_to_jpeg(pdf_path, output_folder):
+    # Create output folder if it doesn't exist
+    output_folder_path = os.path.join(output_folder, os.path.splitext(os.path.basename(pdf_path))[0])
+    if not os.path.exists(output_folder_path):
+        os.makedirs(output_folder_path)
+
+    # Convert PDF to a list of PIL Image objects
+    images = convert_from_path(pdf_path)
+
+    # Loop through each page image and save as JPEG with the same name
+    jpeg_paths = []
+    for i, image in enumerate(images):
+        jpeg_path = os.path.join(output_folder_path, f'{os.path.splitext(os.path.basename(pdf_path))[0]}.jpeg')
+        image.save(jpeg_path, 'JPEG')
+        jpeg_paths.append(jpeg_path)
+
+    return jpeg_paths
+
+# Function to merge all JPEGs into one PDF file
+def merge_all_jpegs(jpeg_paths, output_file):
+    c = canvas.Canvas(output_file, pagesize=letter)
+
+    # Merge all JPEGs into one PDF file
+    for i, jpeg_path in enumerate(jpeg_paths):
+        c.drawImage(jpeg_path, 0, 0, letter[0], letter[1])
+        if i != len(jpeg_paths) - 1:
+            c.showPage()
+
+    c.save()
+
+# Folder containing PDFs
+pdf_folder = '/home/kurt/Downloads/PDF'
+
+# Output folder for JPEGs
+output_folder = '/home/kurt/Downloads/PDF/JPEG'
+
+# Get all PDF files in the folder
+pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+
+# Convert each PDF to JPEG and store paths
+jpeg_paths_all = []
+for pdf_file in pdf_files:
+    pdf_path = os.path.join(pdf_folder, pdf_file)
+    jpeg_paths = pdf_to_jpeg(pdf_path, output_folder)
+    jpeg_paths_all.extend(jpeg_paths)
+
+# Output file path for merged JPEGs into PDF
+output_file = '/home/kurt/Downloads/merged_all_jpegs.pdf'
+
+# Merge all JPEGs into a single PDF file
+merge_all_jpegs(jpeg_paths_all, output_file)
+
+print("Conversion and merging completed!")
